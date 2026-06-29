@@ -73,7 +73,6 @@
   </div>
 </div>
 
-<!-- MODALS -->
 <div class="overlay" id="ov-create">
   <div class="modal" id="modal-create" style="max-width:700px">
     <div class="mh">
@@ -152,7 +151,6 @@
   </div>
 </div>
 
-<!-- Модалка ответа на обращение -->
 <div class="overlay" id="ov-reply">
   <div class="modal" style="max-width:520px">
     <div class="mh">
@@ -186,7 +184,7 @@ var CURRENT_VIEW = 'adm-dashboard';
 var CREATING_TYPE = '';
 var QUESTIONS = [];
 var REPLY_MSG_ID = null;
-var MSGS_MAP = {}; // кэш обращений по id
+var MSGS_MAP = {};
 
 document.getElementById('logo-img').src = KV_LOGO;
 document.getElementById('favicon').href = KV_LOGO;
@@ -201,7 +199,7 @@ kvBindOverlayClose();
   kvInitMobileMenu();
 })();
 
-// ===== VIEWS =====
+
 function showView(v) {
   CURRENT_VIEW = v;
   document.querySelectorAll('.lb').forEach(function(b){ b.classList.remove('on'); });
@@ -218,7 +216,7 @@ function showView(v) {
   }
 }
 
-// ===== DASHBOARD =====
+
 function renderAdmDash(mc) {
   mc.innerHTML = '<div class="vtit" style="margin-bottom:14px">Дашборд</div><div class="mon" id="adm-stats"><div class="mc"><div class="mcl">Сотрудников</div><div class="mcv" id="d-users">-</div></div><div class="mc"><div class="mcl">Опросов</div><div class="mcv" id="d-sq">-</div></div><div class="mc"><div class="mcl">Тестов</div><div class="mcv" id="d-qz">-</div></div><div class="mc"><div class="mcl">Обращений</div><div class="mcv" id="d-msg">-</div></div></div>';
   sbFetch('kv_users?select=id').then(function(r){return r.json()}).then(function(d){setEl('d-users',d.length)}).catch(function(){});
@@ -227,7 +225,7 @@ function renderAdmDash(mc) {
   sbFetch('kv_messages?select=id').then(function(r){return r.json()}).then(function(d){setEl('d-msg',d.length);setEl('sb-msg-cnt',d.length);}).catch(function(){});
 }
 
-// ===== СТАТУС: текст и класс =====
+
 function statusLabel(s) {
   if (s === 'in_progress') return '🟡 В работе';
   if (s === 'resolved') return '🟢 Решено';
@@ -239,7 +237,6 @@ function statusClass(s) {
   return 'status-new';
 }
 
-// ===== ADMIN MESSAGES =====
 function renderAdmMessages(mc) {
   mc.innerHTML = '<div class="ctrl" style="margin-bottom:14px"><div class="vtit">Обращения сотрудников</div></div><div id="msg-list"><div class="es"><div class="ei">&#9993;</div><div>Загрузка...</div></div></div>';
   loadAdmMessages();
@@ -253,11 +250,11 @@ function loadAdmMessages() {
       if (!el) return;
       if (!msgs || !msgs.length) { el.innerHTML='<div class="es"><div class="ei">&#9993;</div><div>Обращений пока нет</div></div>'; return; }
 
-      // Счётчик новых для бейджа
+
       var newCnt = msgs.filter(function(m){return !m.status || m.status==='new';}).length;
       setEl('sb-msg-cnt', newCnt || msgs.length);
 
-      // Кэшируем обращения
+
       MSGS_MAP = {};
       msgs.forEach(function(m){ MSGS_MAP[m.id] = m; });
 
@@ -274,7 +271,6 @@ function loadAdmMessages() {
             (m.admin_name ? ' ('+esc(m.admin_name)+')' : '')+'</div>'+esc(m.admin_comment)+'</div>';
         }
 
-        // data-mid вместо JSON в onclick — надёжно при любом содержимом
         return '<div class="msg-card" id="msg-'+m.id+'">'+
           '<div class="msg-head"><div class="resp-user">'+senderHtml+'</div><div style="display:flex;align-items:center;gap:8px">'+
           '<span class="status-badge '+statusClass(st)+'">'+statusLabel(st)+'</span>'+
@@ -289,7 +285,6 @@ function loadAdmMessages() {
           '</div>';
       }).join('');
 
-      // Делегирование событий — надёжнее чем onclick в строках
       el.onclick = function(e) {
         var rb = e.target.closest('.msg-reply-btn');
         var db = e.target.closest('.msg-del-btn');
@@ -341,7 +336,7 @@ function deleteMessage(id) {
     .catch(function(){ toast('Ошибка', 'err'); });
 }
 
-// ===== ADMIN FORMS =====
+
 function renderAdmForms(mc, type) {
   var label = type === 'survey' ? 'Опросы' : 'Тесты';
   mc.innerHTML = '<div class="ctrl" style="margin-bottom:14px"><div class="vtit">'+label+'</div><button class="bnok" onclick="openCreate(\''+type+'\')">+ Создать</button></div><div class="cg" id="adm-forms-grid"><div class="es"><div class="ei">&#128203;</div><div>Загрузка...</div></div></div>';
@@ -357,7 +352,7 @@ function loadAdmForms(type) {
       if (!forms || !forms.length) { g.innerHTML='<div class="es"><div class="ei">&#128203;</div><div>Нет '+(type==='survey'?'опросов':'тестов')+'. Создайте первый!</div></div>'; return; }
       g.innerHTML = forms.map(function(f){
         var qCount = (f.questions||[]).length;
-        // FIX: используем data-атрибут вместо вложенного JSON.stringify для кнопки результатов
+  
         var fDataAttr = 'data-fid="'+f.id+'"';
         return '<div class="card">'+
           '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
@@ -386,13 +381,13 @@ function toggleFormActive(id, newState, type) {
   sbFetch('kv_forms?id=eq.'+id, {method:'PATCH', body:JSON.stringify({is_active: newState})}).then(function(){ loadAdmForms(type); }).catch(function(){ toast('Ошибка','err'); });
 }
 
-// ===== RESULTS — FIX: грузим форму отдельным запросом по id =====
+
 function openResults(formId, type, title) {
   document.getElementById('res-title').textContent = title + ' — Результаты';
   document.getElementById('res-body').innerHTML = '<div class="es"><div class="ei">&#128202;</div><div>Загрузка...</div></div>';
   openModal('ov-results');
 
-  // Загружаем форму и ответы параллельно
+
   Promise.all([
     sbFetch('kv_forms?id=eq.'+formId+'&select=*').then(function(r){return r.json()}),
     sbFetch('kv_responses?form_id=eq.'+formId+'&select=*&order=submitted_at.desc').then(function(r){return r.json()})
@@ -432,7 +427,7 @@ function renderResults(f, type, resps) {
       resps.forEach(function(r) {
         var ans = (r.answers||[])[qi];
         if (ans && ans.value) {
-          // Показываем реального отправителя всегда
+      
           var senderDisp = r.user_name || r.user_email || '—';
           var anonMark = r.is_anonymous ? ' <span class="spy-badge">&#128065; Анонимно</span>' : '';
           html += '<div style="padding:7px 10px;background:var(--card2);border-radius:var(--radius-xs);font-size:13px;margin-bottom:4px;border-left:2px solid var(--y)"><span style="font-size:10px;color:var(--muted);font-weight:700">'+esc(senderDisp)+anonMark+'</span><br>'+esc(ans.value)+'</div>';
@@ -488,7 +483,7 @@ function renderResults(f, type, resps) {
   document.getElementById('res-body').innerHTML = html;
 }
 
-// ===== CREATE FORM =====
+
 function openCreate(type) {
   CREATING_TYPE = type;
   QUESTIONS = [];
@@ -602,7 +597,6 @@ function saveForm() {
   }).catch(function(){ toast('Ошибка соединения', 'err'); });
 }
 
-// ===== ADMIN USERS =====
 var NU_TYPE = 'user';
 var PASS_CHANGE_ID = null;
 
