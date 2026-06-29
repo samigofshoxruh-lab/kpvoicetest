@@ -11,7 +11,7 @@
 .done-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(46,125,50,.1);color:var(--ok);border:1.5px solid rgba(46,125,50,.3)}
 .card-done{opacity:.82;pointer-events:none}
 .card-done .cpbtn{background:var(--ok);cursor:default}
-/* Home page horizontal cards */
+
 .home-card-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px}
 @media(max-width:480px){
   .home-card-row{flex-direction:column;align-items:flex-start}
@@ -68,7 +68,7 @@
   </div>
 </div>
 
-<!-- MODAL: пройти опрос/тест -->
+
 <div class="overlay" id="ov-take">
   <div class="modal" id="modal-take">
     <div class="mh">
@@ -133,7 +133,7 @@ function renderHome(mc) {
     '<div id="home-new-section"></div>'+
     '</div>';
 
-  // Загружаем всё параллельно
+
   Promise.all([
     sbFetch('kv_forms?is_active=eq.true&type=eq.survey&select=*&order=created_at.desc').then(function(r){return r.json()}),
     sbFetch('kv_forms?is_active=eq.true&type=eq.quiz&select=*&order=created_at.desc').then(function(r){return r.json()}),
@@ -144,22 +144,21 @@ function renderHome(mc) {
     var done = res[2] || [];
     var doneIds = done.map(function(x){return x.form_id;});
 
-    // Счётчики в шапке
     document.getElementById('h-sq').textContent = surveys.length;
     document.getElementById('h-qz').textContent = quizzes.length;
     setEl('sb-sq-cnt', surveys.length);
     setEl('sb-qz-cnt', quizzes.length);
 
-    // Ответов всего
+
     sbFetch('kv_responses?user_email=eq.'+encodeURIComponent(ME.email)+'&select=id')
       .then(function(r){return r.json()}).then(function(d){document.getElementById('h-my').textContent=d.length;}).catch(function(){});
 
-    // Новые (не пройденные) формы
+
     var newSurveys = surveys.filter(function(f){ return doneIds.indexOf(f.id) === -1; });
     var newQuizzes = quizzes.filter(function(f){ return doneIds.indexOf(f.id) === -1; });
     var allNew = newSurveys.map(function(f){ return {f:f, type:'survey'}; })
                   .concat(newQuizzes.map(function(f){ return {f:f, type:'quiz'}; }));
-    // Сортируем по дате (новейшие первыми)
+ 
     allNew.sort(function(a,b){ return new Date(b.f.created_at)-new Date(a.f.created_at); });
 
     var sec = document.getElementById('home-new-section');
@@ -193,7 +192,7 @@ function renderHome(mc) {
     html += '</div>';
     sec.innerHTML = html;
 
-    // Обработчик кнопок "Начать"
+
     sec.addEventListener('click', function(e){
       var btn = e.target.closest('.home-start-btn');
       if (btn) openTake(btn.dataset.fid);
@@ -224,7 +223,7 @@ function renderForms(mc, type) {
     g.innerHTML = forms.map(function(f){
       var isDone = doneIds.indexOf(f.id) !== -1;
       var q = (f.questions||[]).length;
-      // Если пройдено — карточка заблокирована
+    
       var cardClass = isDone ? 'card card-done' : 'card';
       var btnHtml = isDone
         ? '<span class="done-badge">&#10003; Пройдено</span>'
@@ -242,11 +241,9 @@ function renderForms(mc, type) {
   });
 }
 
-// Кэш форм чтобы не грузить повторно
 var FORMS_CACHE = {};
 
 function openTake(formId) {
-  // Загружаем форму из кэша или с сервера
   function doOpen(f) {
     TAKING = f;
     document.getElementById('take-title').textContent = f.title;
@@ -316,7 +313,6 @@ function submitResponse() {
     });
   }
 
-  // Всегда именной — анонимности нет
   var payload = {
     form_id: f.id,
     user_email: ME.email,
