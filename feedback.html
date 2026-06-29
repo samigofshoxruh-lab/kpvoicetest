@@ -170,7 +170,6 @@ function renderMyMessages() {
   var tc = document.getElementById('tab-content');
   tc.innerHTML = '<div class="es"><div class="ei">&#9993;</div><div>Загрузка...</div></div>';
 
-  // Загружаем обращения этого сотрудника
   sbFetch('kv_messages?user_email=eq.'+encodeURIComponent(ME.email)+'&select=*&order=created_at.desc')
     .then(function(r){return r.json()})
     .then(function(msgs){
